@@ -22,12 +22,17 @@ int main(void) {
     int rx, ry, wx, wy;
     unsigned int mr;
     XQueryPointer(dpy, DefaultRootWindow(dpy), &root, &child, &rx, &ry, &wx, &wy, &mr);
-    int nscreens;
+    int nscreens = 0;
     XineramaScreenInfo* screens = XineramaQueryScreens(dpy, &nscreens);
+    int ret = 1;
     for (int i = 0; i < nscreens; ++i) {
-        if (in_screen_bounds(rx, ry, &screens[i])) printf("%d\n", screens[i].screen_number);
+        if (in_screen_bounds(rx, ry, &screens[i])) {
+            printf("%d\n", screens[i].screen_number);
+            ret = 0;
+            break;
+        }
     }
-    XFree(screens);
+    if (screens) XFree(screens);
     XCloseDisplay(dpy);
-    return 0;
+    return ret;
 }
