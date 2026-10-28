@@ -3,32 +3,29 @@
 #include <X11/Xlib.h>
 #include <X11/extensions/Xinerama.h>
 
+bool in_x(int x, XineramaScreenInfo* cs) {
+    return x >= cs->x_org && x < cs->x_org + cs->width;
+}
+
+bool in_y(int y, XineramaScreenInfo* cs) {
+    return y >= cs->y_org && y < cs->y_org + cs->height;
+}
+
 bool in_screen_bounds(int x, int y, XineramaScreenInfo* cs) {
-    if (x >= cs->x_org && x < cs->x_org + cs->width
-            && y >= cs->y_org && y < cs->y_org + cs->height) return true;
-    return false;
+    return (in_x(x, cs) && in_y(y, cs));
 }
 
 int main(void) {
     Display* dpy = XOpenDisplay(NULL);
     if (!dpy) return 1;
-    int scr = DefaultScreen(dpy);
-    Window root = RootWindow(dpy, scr);
-    Window focused = NULL;
-    int rev;
-    XGetInputFocus(dpy, &focused, &rev);
-    if (focused == None) focused = root;
-    XWindowAttributes a;
-    XGetWindowAttributes(dpy, focused, &a);
+    Window root, child;
     int rx, ry, wx, wy;
     unsigned int mr;
+    XQueryPointer(dpy, DefaultRootWindow(dpy), &root, &child, &rx, &ry, &wx, &wy, &mr);
     int nscreens;
     XineramaScreenInfo* screens = XineramaQueryScreens(dpy, &nscreens);
-    if (!screens) return 1;
-    XQueryPointer(dpy, focused, &root, &root, &rx, &ry, &wx, &wy, &mr);
     for (int i = 0; i < nscreens; ++i) {
-        XineramaScreenInfo cs = screens[i]; 
-        if (in_screen_bounds(rx, ry, &cs)) printf("%d\n", cs.screen_number);
+        if (in_screen_bounds(rx, ry, &screens[i])) printf("%d\n", screens[i].screen_number);
     }
     XFree(screens);
     XCloseDisplay(dpy);
